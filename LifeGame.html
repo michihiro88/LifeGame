@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html>
+<head>
+<!--<script src="./jquery-2.1.3.js"></script>-->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+<style type="text/css">
+
+.cell {
+	width: 25px;
+	height: 25px;
+	border-width: thin;
+	border-color: black;
+	border-style: solid;
+	color: white;
+	background-color: brown;
+	float: left;
+}
+
+.alive{
+	background-color: blue;
+}
+
+.first {
+	margin-left: 0;
+	clear: left;
+}
+
+.clearfix:after{
+	visibility:	hidden;
+	display: 	block;
+	font-size:	0;
+	content: 	" ";
+	clear:		both;
+	height:		0;
+}
+
+</style>
+
+<script type="text/javascript">
+
+$(function(){
+
+	//定数
+	var rows = 15; // 盤の横幅
+	var cols = 15; // 盤の縦幅
+	var interval = 500; // 自動更新の間隔
+
+	// 盤面作成
+	function drawBoard(){
+		var board = $('#board');
+		var num = rows * cols;
+		var i;
+		for(i = 0; i < num; i++){
+			// セル追加
+			var obj = $('<div class="cell"></div>').appendTo(board);
+
+			// 列の先頭なら改行
+			if(i % cols == 0){
+				obj.addClass('first');
+			}
+
+			// イベントハンドラ設定(セルの静止設定)
+			obj.on('click', function(){
+				$(this).toggleClass('alive');
+			});
+		}
+	};
+
+	// 次世代へ移行
+	function nextGeneration(){
+		var cells = $('#board div');
+		
+
+		var i, alives, size = cells.length;
+		var next = Array(size);
+
+		//次世代情報初期化
+		for(i = 0; i < size; i++){next[i] = false};
+
+		// 周辺の生きているセルを判定
+		for(i = 0; i < size; i++){
+			alives = 0;
+			//左上
+			if(i-cols-1 >=0 && i % cols != 0 && $(cells[i-cols-1]).hasClass('alive')==true){alives++;}
+
+			//上
+			if(i-cols   >=0 && $(cells[i-cols]).hasClass('alive')==true){alives++;}
+
+			//右上
+			if(i-cols+1 >=0 && i % cols != cols-1 && $(cells[i-cols+1]).hasClass('alive')==true){alives++;}
+
+			//左
+			if(i-1      >=0  && i % cols != 0 && $(cells[i-1]).hasClass('alive')==true){alives++;}
+
+			//右
+			if(i+1      < size && i % cols != cols-1 && $(cells[i+1]).hasClass('alive')==true){alives++;}
+
+			//左下
+			if(i+cols-1 < size  && i % cols != 0 && $(cells[i+cols-1]).hasClass('alive')==true){alives++;}
+
+			//下
+			if(i+cols   < size && $(cells[i+cols]).hasClass('alive')==true){alives++;}
+
+			//右下
+			if(i+cols+1 < size && i % cols != cols-1 && $(cells[i+cols+1]).hasClass('alive')==true){alives++;}
+			
+			//誕生
+			if($(cells[i]).hasClass('alive') == false && alives == 3){
+				next[i] = true;
+				continue;
+			}
+
+			//生存
+			if($(cells[i]).hasClass('alive') == true && (alives == 2 || alives == 3)){
+				next[i] = true;
+				continue;
+			}
+
+			//過疎
+			if($(cells[i]).hasClass('alive') == true && alives < 1){
+				next[i] = false;
+				continue;
+			}
+
+			//過密
+			if($(cells[i]).hasClass('alive') == true && alives >= 4){
+				next[i] = false;
+			}
+		}
+
+		//次世代情報を反映
+		for(i = 0; i < size; i++){
+			if(next[i] == true){
+				$(cells[i]).addClass('alive');
+			}else{
+				$(cells[i]).removeClass('alive');
+			}
+		};
+	}
+
+	// イベントハンドラ登録(手動更新ボタン)
+	$('#next').on('click', function(){
+		nextGeneration();
+	});
+
+	//イベントハンドラ登録(自動更新開始ボタン)
+	var timer;
+	$('#auto_start').on('click', function(){
+		timer = setInterval(nextGeneration, interval);
+	});
+
+	//イベントハンドラ登録(自動更新停止ボタン)
+	$('#auto_stop').on('click', function(){
+		timer = clearInterval(timer);
+	});
+
+	//イベントハンドラ登録(盤面クリアボタン)
+	$('#clear').on('click', function(){
+		//自動更新停止
+		timer = clearInterval(timer);
+
+		//クリア処理
+		var cells = $('#board div');
+		cells.each(function(){
+			$(this).removeClass('alive');
+		});
+	});
+
+	// 初期化実行
+	drawBoard();
+});
+
+</script>
+
+</head>
+
+<body>
+<h1>ライフゲーム</h1>
+これは、HTML/CSS/JavaScript/jQueryを使用した、ライフゲームのプログラムです。
+<br><br>
+<div id="board" class="clearfix"></div>
+<br>
+
+<h2>操作</h2>
+盤上のセルをクリックすることで、セルの生死を切り替えることができます。<br><br>
+
+<input type="button" id="next" value="次世代(手動更新)">
+<input type="button" id="auto_start" value="次世代(自動更新開始)">
+<input type="button" id="auto_stop" value="次世代(自動更新停止)">
+<input type="button" id="clear" value="盤面クリア">
+
+<h2>ルール</h2>
+WikiPediaの<a target="_blank" href="http://ja.wikipedia.org/wiki/%E3%83%A9%E3%82%A4%E3%83%95%E3%82%B2%E3%83%BC%E3%83%A0">ライフゲーム</a>の記載より。
+<ul>
+	<li><b>誕生</b><dt>死んでいるセルに隣接する生きたセルがちょうど3つあれば、次の世代が誕生する</li>
+	<li><b>生存</b><dt>生きているセルに隣接する生きたセルが2つか3つならば、次の世代でも生存する。</li>
+	<li><b>過疎</b><dt>生きているセルに隣接する生きたセルが1つ以下ならば、過疎により死滅する。</li>
+	<li><b>過密</b><dt>生きているセルに隣接する生きたセルが4つ以上ならば、過密により死滅する。</li>
+</ul>
+
+<h2>来歴</h2>
+<ul>
+	<li>v0.1: 2015.02.13 山崎通弘(Yamazaki Michihiro)作成。プログラムはMIT Licenseとします。
+	<li>v0.2: 2015.02.15 盤面クリアボタン追加。
+	<li>v0.3: 2015.02.15 アルゴリズム修正(左右の端がつながっていないようにした)。
+</ul>
+</body>
